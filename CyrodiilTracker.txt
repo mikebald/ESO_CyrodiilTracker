@@ -1,8 +1,8 @@
-## Title: CrownTracker
+## Title: CyrodiilTracker
 ## APIVersion: 100031
-## SavedVariables: CrownTracker
+## SavedVariables: CyrodiilTracker
 ## Version 1.0
 ## Description: Displays coordinates of the crown and their heading for unique location determination
 
-CrownTracker.lua
-CrownTracker.xml
+CyrodiilTracker.lua
+CyrodiilTracker.xml

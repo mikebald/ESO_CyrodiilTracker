@@ -1,0 +1,17 @@
+<GuiXml>
+	<Controls>
+		<TopLevelControl name="CyrodiilTrackerUI" clampedToScreen="true" topmost="true">
+			<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT"/>
+			<Controls>
+				<Backdrop name="$(parent)_Backdrop" edgeColor="FFFFFF" centerColor="FFFFFF" alpha="0.2" >
+					<AnchorFill/>
+					<Edge edgeSize="1"/>
+				</Backdrop>
+				<Label name="$(parent)_lblPosition" font="CyrodiilTracker/FSEX300.ttf|16" color="000000" wrapMode="TRUNCATE"
+				verticalAlignment="TOP" horizontalAlignment="LEFT" text="000000000">
+					<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT"/>
+				</Label>
+			</Controls>
+		</TopLevelControl>
+	</Controls>
+</GuiXml>
