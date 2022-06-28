@@ -1,7 +1,6 @@
 CyroTracker = CyroTracker or {}
-CyroTracker.addonName = "CrownTracker"
-CyroTracker.stopped = true
-CyroTracker.debug = false
+CyroTracker.addonName = "CyrodiilTracker"
+CyroTracker.updateInterval = 500 -- in ms
 CyroTracker.last_worldX = 0
 CyroTracker.last_worldY = 0
 CyroTracker.leaderTag = nil
@@ -52,10 +51,11 @@ function CyroTracker.OnAddOnLoaded( eventCode, addOnName )
 		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_MEMBER_LEFT, CyroTracker.OnUpdateLeader)
 		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_MEMBER_CONNECTED_STATUS, CyroTracker.OnUpdateLeader)
 
+		--EVENT_MANAGER:RegisterForUpdate(CyroTracker.addonName, CyroTracker.updateInterval, CyroTracker.OnUpdate)
+
 		CyroTracker.WriteForExport()
-
 		EVENT_MANAGER:UnregisterForEvent(CyroTracker.addonName, EVENT_ADD_ON_LOADED)
-
+		zo_callLater( function() d(CyroTracker.addonName..": Loaded") end )
 	end
 end
 
@@ -69,31 +69,16 @@ SLASH_COMMANDS["/ct"] = function(text)
 	elseif text == "unlock" then
 		CyroTracker.vars.moveable = true
 		CyrodiilTrackerUI:SetMovable(true)
-	elseif text == "player" then
-		CyroTracker.debug = true
-		CyroTracker.leaderTag = "player"
-	elseif text == "stop" then
-		CyroTracker.stopped = true
-		CyroTracker.crownRow1    = "0000000000"
-		CyroTracker.keepRow1     = "0000000000"
-		CyroTracker.keepRow2     = "0000000000"
-		CyroTracker.outpostRow1  = "0000000000"
-		CyroTracker.WriteForExport()
-	elseif text == "start" then
-		CyroTracker.debug = false
-		CyroTracker.stopped = false
+	elseif text == "reload" then
 		CyroTracker.OnUpdateLeader()
 	else
-		d("CrownTracker doesn't know command: "..text)
-		d("available args: Start | Stop | Player | Lock | Unlock ")
+		d(CyroTracker.addonName.." doesn't know command: "..text)
+		d(" - Available args: Lock | Unlock | Reload ")
 	end
 end
 
-function CyroTracker.SetLeaderUnitTag()
-	if CyroTracker.debug == true then
-		CyroTracker.leaderTag = "player"
-	end
-	
+
+function CyroTracker.OnUpdateLeader()
 	local groupSize = GetGroupSize()
 
 	if groupSize > 0 then
@@ -106,18 +91,15 @@ function CyroTracker.SetLeaderUnitTag()
 			end
 		end
 	else
-		CyroTracker.leaderTag = nil
+		CyroTracker.leaderTag = "player"
+		d("Loaded new Leader "..GetUnitDisplayName(CyroTracker.leaderTag))
 	end
-end
-
-function CyroTracker.OnUpdateLeader()
-	CyroTracker.SetLeaderUnitTag()
 end
 
 function CyroTracker.OnUpdate()
 	local unitID = CyroTracker.leaderTag
 
-	if CyroTracker.leaderTag == nil or CyroTracker.stopped == false then
+	if CyroTracker.leaderTag == nil then
 		return
 	end
 	
