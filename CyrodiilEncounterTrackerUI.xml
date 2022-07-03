@@ -1,0 +1,18 @@
+<GuiXml>
+	<Controls>
+		<TopLevelControl name="CyrodiilEncounterTrackerUI" clampedToScreen="true" topmost="true" resizeToFitDescendents="true">
+			<Dimensions x="210" y="40" />
+			<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="12" offsetX="-320" offsetY="-35"  />
+			<Controls>
+				<Label name="$(parent)_lblTitle" font="ZoFontWinH1" color="437BE0" wrapMode="TRUNCATE"
+				verticalAlignment="TOP" horizontalAlignment="LEFT" text="Logging: ">
+					<Anchor point="LEFT" />
+				</Label>
+				<Label name="$(parent)_lblStatus" font="ZoFontWinH1" color="FF0000" wrapMode="TRUNCATE"
+				verticalAlignment="TOP" horizontalAlignment="RIGHT" text="Stopped">
+					<Anchor point="RIGHT" />
+				</Label>
+			</Controls>
+		</TopLevelControl>
+	</Controls>
+</GuiXml>

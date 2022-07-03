@@ -1,7 +1,9 @@
 <GuiXml>
 	<Controls>
-		<TopLevelControl name="CyrodiilTrackerUI" clampedToScreen="true" topmost="true">
-			<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT"/>
+		<TopLevelControl name="CyrodiilTrackerUI" clampedToScreen="true" topmost="true" resizeToFitDescendents="true">
+			<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="12"/>
+			<OnMoveStop> CyroTracker.OnMoveStop() </OnMoveStop>
+			<OnUpdate> CyroTracker.OnUpdate() </OnUpdate>
 			<Controls>
 				<Backdrop name="$(parent)_Backdrop" edgeColor="FFFFFF" centerColor="FFFFFF" alpha="0.2" >
 					<AnchorFill/>

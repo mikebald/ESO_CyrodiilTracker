@@ -1,10 +1,13 @@
-CyroTrackerConstants = CyroTrackerConstants or {}
-CyroTrackerConstants.resourceType = {}
-CyroTrackerConstants.resourceType.FARM = 1
-CyroTrackerConstants.resourceType.MINE = 2
-CyroTrackerConstants.resourceType.LUMBER = 3
+CyroTracker.Constants = CyroTracker.Constants or {}
 
-CyroTrackerConstants.resources = {
+local Constants = CyroTracker.Constants
+
+Constants.resourceType = {}
+Constants.resourceType.FARM = 1
+Constants.resourceType.MINE = 2
+Constants.resourceType.LUMBER = 3
+
+Constants.resources = {
     [22] = "Bloodmayne Farm",
     [23] = "Bloodmayne Mine",
     [24] = "Bloodmayne Lumbermill",
@@ -61,7 +64,7 @@ CyroTrackerConstants.resources = {
     [87] = "Brindle Farm"
 
 }
-CyroTrackerConstants.keeps = {
+Constants.keeps = {
     [3] = "Warden",
     [4] = "Rayles",
     [5] = "Glademist",
@@ -81,7 +84,7 @@ CyroTrackerConstants.keeps = {
     [19] = "Black Boot",
     [20] = "Bloodmayne",
 }
-CyroTrackerConstants.outposts = {
+Constants.outposts = {
     [132] = "Nikel",
     [133] = "Sejanus",
     [134] = "Bleaker's",
@@ -89,12 +92,12 @@ CyroTrackerConstants.outposts = {
     [164] = "Carmala",
     [165] = "Harlun's"
 }
-CyroTrackerConstants.towns = {
+Constants.towns = {
     [149] = "Vlastarus",
     [151] = "Bruma",
     [152] = "Cropsford"
 }
-CyroTrackerConstants.scrolltemples = {
+Constants.scrolltemples = {
     [118] = "Scroll Temple of Altadoon",
     [119] = "Scroll Temple of Mnem",
     [120] = "Scroll Temple of Ghartok",
@@ -103,7 +106,7 @@ CyroTrackerConstants.scrolltemples = {
     [123] = "Scroll Temple of Alma Ruma"
 }
 
-CyroTrackerConstants.destructibles = {
+Constants.destructibles = {
     [154] = "Alessia Bridge",
     [155] = "Ash Milegate",
     [156] = "Niben River Bridge",
@@ -115,30 +118,31 @@ CyroTrackerConstants.destructibles = {
     [162] = "Chalman Milegate"
 }
 
-CyroTrackerConstants.flipTimes = {}
-CyroTrackerConstants.flipTimes.KEEP = 20000
-CyroTrackerConstants.flipTimes.OUTPOST = 20000
-CyroTrackerConstants.flipTimes.RESOURCE = 20000
+Constants.flipTimes = {}
+Constants.flipTimes.KEEP = 20000
+Constants.flipTimes.OUTPOST = 20000
+Constants.flipTimes.RESOURCE = 20000
 
-CyroTrackerConstants.events.GUILD_CLAIM = 1
-CyroTrackerConstants.events.GUILD_LOST = 2
-CyroTrackerConstants.events.STATUS_UA = 3
-CyroTrackerConstants.events.STATUS_UA_LOST = 4
-CyroTrackerConstants.events.KEEP_OWNER_CHANGED = 5
-CyroTrackerConstants.events.TICK_DEFENSE = 6
-CyroTrackerConstants.events.TICK_OFFENSE = 7
-CyroTrackerConstants.events.SCROLL_PICKED_UP = 8
-CyroTrackerConstants.events.SCROLL_DROPPED = 9
-CyroTrackerConstants.events.SCROLL_RETURNED = 10
-CyroTrackerConstants.events.SCROLL_RETURNED_BY_TIMER = 11
-CyroTrackerConstants.events.SCROLL_CAPTURED = 12
-CyroTrackerConstants.events.EMPEROR_CORONATED = 13
-CyroTrackerConstants.events.EMPEROR_DEPOSED = 14
-CyroTrackerConstants.events.QUEST_REWARD = 15
-CyroTrackerConstants.events.BATTLEGROUND_REWARD = 16
-CyroTrackerConstants.events.BATTLEGROUND_MEDAL_REWARD = 16
-CyroTrackerConstants.events.DAEDRIC_ARTIFACT_SPAWNED = 17
-CyroTrackerConstants.events.DAEDRIC_ARTIFACT_REVEALED = 18
-CyroTrackerConstants.events.DAEDRIC_ARTIFACT_DROPPED = 19
-CyroTrackerConstants.events.DAEDRIC_ARTIFACT_TAKEN = 20
-CyroTrackerConstants.events.DAEDRIC_ARTIFACT_DESPAWNED = 21
+Constants.events = {}
+Constants.events.GUILD_CLAIM = 1
+Constants.events.GUILD_LOST = 2
+Constants.events.STATUS_UA = 3
+Constants.events.STATUS_UA_LOST = 4
+Constants.events.KEEP_OWNER_CHANGED = 5
+Constants.events.TICK_DEFENSE = 6
+Constants.events.TICK_OFFENSE = 7
+Constants.events.SCROLL_PICKED_UP = 8
+Constants.events.SCROLL_DROPPED = 9
+Constants.events.SCROLL_RETURNED = 10
+Constants.events.SCROLL_RETURNED_BY_TIMER = 11
+Constants.events.SCROLL_CAPTURED = 12
+Constants.events.EMPEROR_CORONATED = 13
+Constants.events.EMPEROR_DEPOSED = 14
+Constants.events.QUEST_REWARD = 15
+Constants.events.BATTLEGROUND_REWARD = 16
+Constants.events.BATTLEGROUND_MEDAL_REWARD = 16
+Constants.events.DAEDRIC_ARTIFACT_SPAWNED = 17
+Constants.events.DAEDRIC_ARTIFACT_REVEALED = 18
+Constants.events.DAEDRIC_ARTIFACT_DROPPED = 19
+Constants.events.DAEDRIC_ARTIFACT_TAKEN = 20
+Constants.events.DAEDRIC_ARTIFACT_DESPAWNED = 21

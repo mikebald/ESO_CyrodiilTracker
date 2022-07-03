@@ -1,4 +1,5 @@
 CyroTracker = CyroTracker or {}
+CyroTracker.title = "|cFF860DCyrodiiltracker|cD5D502"
 CyroTracker.addonName = "CyrodiilTracker"
 CyroTracker.updateInterval = 500 -- in ms
 CyroTracker.last_worldX = 0
@@ -9,53 +10,27 @@ CyroTracker.keepRow2     = "_POSITION_"
 CyroTracker.outpostRow1  = "__SYSTEM__"
 CyroTracker.crownRow1    = "0000000000"
 
-CyroTracker.vars = {}
-CyroTracker.vars.offSetX = 0
-CyroTracker.vars.offSetY = 0
-CyroTracker.vars.point = TOPLEFT
-CyroTracker.vars.relativePoint = TOPLEFT
-CyroTracker.vars.moveable = true
 
 CyroTracker.constants = {}
+
+function CyroTracker.Message( message )
+	CHAT_ROUTER:AddSystemMessage(string.format(
+		"[%s]: %s", CyroTracker.title, 
+		tostring(message)
+	))
+end
 
 function CyroTracker.OnAddOnLoaded( eventCode, addOnName )
 	if addOnName == CyroTracker.addonName then
 
-		local accountSavedVars = ZO_SavedVars:NewAccountWide(CyroTracker.addonName, 1, nil, CyroTracker.vars)
-
-		if accountSavedVars ~= nil then
-			CyroTracker.vars = accountSavedVars
-		end
-
-		CyrodiilTrackerUI:ClearAnchors()
-		CyrodiilTrackerUI:SetAnchor(CyroTracker.vars.point,
-			nil,
-			CyroTracker.vars.relativePoint,
-			CyroTracker.vars.offSetX,
-			CyroTracker.vars.offSetY
-		)
-		
-		CyrodiilTrackerUI:SetMovable(CyroTracker.vars.moveable)
-
-		CyrodiilTrackerUI:SetClampedToScreen(true)
-		CyrodiilTrackerUI:SetResizeToFitDescendents(true)
-		CyrodiilTrackerUI:SetMouseEnabled(true)
-		CyrodiilTrackerUI:SetHidden(false)
-		
-		CyrodiilTrackerUI:SetHandler("OnMoveStop", CyroTracker.OnMoveStop)
-		CyrodiilTrackerUI:SetHandler("OnUpdate",   CyroTracker.OnUpdate)
-		
 		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_LEADER_UPDATE, CyroTracker.OnUpdateLeader)
-		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_UPDATE, CyroTracker.OnUpdateLeader)
-		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_MEMBER_JOINED, CyroTracker.OnUpdateLeader)
-		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_MEMBER_LEFT, CyroTracker.OnUpdateLeader)
-		EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_GROUP_MEMBER_CONNECTED_STATUS, CyroTracker.OnUpdateLeader)
-
 		--EVENT_MANAGER:RegisterForUpdate(CyroTracker.addonName, CyroTracker.updateInterval, CyroTracker.OnUpdate)
-
+		
 		CyroTracker.WriteForExport()
+		zo_callLater( function() CyroTracker.Message("Loaded") end, 100 )
+		zo_callLater( function() CyroTracker.EncounterTracker.Initialize() end, 500 )
+
 		EVENT_MANAGER:UnregisterForEvent(CyroTracker.addonName, EVENT_ADD_ON_LOADED)
-		zo_callLater( function() d(CyroTracker.addonName..": Loaded") end )
 	end
 end
 
@@ -63,17 +38,16 @@ EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_ADD_ON_LOADED, CyroT
 
 SLASH_COMMANDS["/ct"] = function(text)
 	text = string.lower(text)
-	if text == "lock" then
-		CyroTracker.vars.moveable = false
-		CyrodiilTrackerUI:SetMovable(false)
-	elseif text == "unlock" then
-		CyroTracker.vars.moveable = true
-		CyrodiilTrackerUI:SetMovable(true)
-	elseif text == "reload" then
+	if text == "reload" then
 		CyroTracker.OnUpdateLeader()
+		CyroTracker.EncounterTracker.Status()
+	elseif text == "log" then
+		CyroTracker.EncounterTracker.Toggle()
+	elseif text == "test" then
+		CyroTracker.Message(CyroTracker.EncounterTracker.IsTime())
+		CyroTracker.Message(CyroTracker.EncounterTracker.IsDate())
 	else
-		d(CyroTracker.addonName.." doesn't know command: "..text)
-		d(" - Available args: Lock | Unlock | Reload ")
+		CyroTracker.Message("Available args: Log | Reload")
 	end
 end
 
@@ -85,14 +59,16 @@ function CyroTracker.OnUpdateLeader()
 		for i = 1, groupSize do
 			local unitTag = GetGroupUnitTagByIndex(i)
 			if IsUnitGroupLeader(unitTag) then
-				CyroTracker.leaderTag = unitTag
-				d("Loaded new leader "..GetUnitDisplayName(unitTag))
+				if unitTag ~= CyroTracker.leaderTag then
+					CyroTracker.Message("Loaded new leader "..GetUnitDisplayName(unitTag))
+					CyroTracker.leaderTag = unitTag
+				end
 				return
 			end
 		end
 	else
 		CyroTracker.leaderTag = "player"
-		d("Loaded new Leader "..GetUnitDisplayName(CyroTracker.leaderTag))
+		CyroTracker.Message("Loaded new Leader "..GetUnitDisplayName(CyroTracker.leaderTag))
 	end
 end
 
@@ -103,7 +79,6 @@ function CyroTracker.OnUpdate()
 		return
 	end
 	
-	-- cyrodiil map 181
 	local _x, _y, heading, isShownInCurrentMap = GetMapPlayerPosition(unitID)
 	local zoneId, worldX, worldZ, worldY = GetUnitWorldPosition(unitID)
 	
@@ -135,15 +110,4 @@ function CyroTracker.WriteForExport()
 	resultText = resultText..CyroTracker.crownRow1
 	
 	CyrodiilTrackerUI_lblPosition:SetText(resultText)
-end
-
-function CyroTracker.OnMoveStop(self)
-		local validAnchor,point,relativeTo, relativePoint, offSetX, offSetY = self:GetAnchor()
-		
-		if validAnchor then
-			CyroTracker.vars.offSetX = offSetX
-			CyroTracker.vars.offSetY = offSetY
-			CyroTracker.vars.point 		= point
-			CyroTracker.vars.relativePoint = relativePoint
-		end
 end
