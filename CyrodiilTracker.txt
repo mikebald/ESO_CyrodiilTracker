@@ -7,7 +7,8 @@
 CyrodiilTracker.lua
 CyrodiilTrackerUI.xml
 
-CyrodiilEncounterTracker.lua
-CyrodiilEncounterTrackerUI.xml
+CyrodiilTracker.EncounterTracker.lua
+CyrodiilTracker.EncounterTrackerUI.xml
 
-CyrodiilTrackerConstants.lua
+CyrodiilTracker.Constants.lua
+CyrodiilTracker.KeepTracker.lua

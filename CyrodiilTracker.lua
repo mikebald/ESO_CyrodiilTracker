@@ -1,4 +1,5 @@
 CyroTracker = CyroTracker or {}
+
 CyroTracker.title = "|cFF860DCyrodiiltracker|cD5D502"
 CyroTracker.addonName = "CyrodiilTracker"
 CyroTracker.updateInterval = 500 -- in ms
@@ -9,9 +10,6 @@ CyroTracker.keepRow1     = "OFFLINERS_"
 CyroTracker.keepRow2     = "_POSITION_"
 CyroTracker.outpostRow1  = "__SYSTEM__"
 CyroTracker.crownRow1    = "0000000000"
-
-
-CyroTracker.constants = {}
 
 function CyroTracker.Message( message )
 	CHAT_ROUTER:AddSystemMessage(string.format(
@@ -44,8 +42,7 @@ SLASH_COMMANDS["/ct"] = function(text)
 	elseif text == "log" then
 		CyroTracker.EncounterTracker.Toggle()
 	elseif text == "test" then
-		CyroTracker.Message(CyroTracker.EncounterTracker.IsTime())
-		CyroTracker.Message(CyroTracker.EncounterTracker.IsDate())
+		CyroTracker.KeepTracker.Initialize()
 	else
 		CyroTracker.Message("Available args: Log | Reload")
 	end

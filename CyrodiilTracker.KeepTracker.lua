@@ -1,94 +1,91 @@
-CyroTrackerKeeps = CyroTrackerKeeps or {}
-CyroTrackerKeeps.updateInterval = 1000
-CyroTrackerKeeps.state = {}
+CyroTracker.KeepTracker = CyroTracker.KeepTracker or {}
+
+local KeepTracker = CyroTracker.KeepTracker
+local Constants = CyroTracker.Constants
+
+KeepTracker.updateInterval = 1000
+KeepTracker.state = {}
 
 -- BGQUERY_LOCAL -> battlegroundContext
 
-function CyroTrackerKeeps.Initialize()
-    EVENT_MANAGER:RegisterForUpdate(CrownTracker.name, CyroTrackerKeeps.updateInterval, CyroTrackerKeeps.UpdateLoop)
+function KeepTracker.Initialize()
+    EVENT_MANAGER:RegisterForUpdate(CyroTracker.name, KeepTracker.updateInterval, KeepTracker.UpdateLoop)
 
-    CyroTrackerKeeps.InitResources()
-    CyroTrackerKeeps.InitTrackedObjects()
+    KeepTracker.InitResources()
+    KeepTracker.InitTrackedObjects()
     --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_UNDER_ATTACK_CHANGED, OnKeepUnderAttackChanged)
     --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_ALLIANCE_OWNER_CHANGED, OnAllianceOwnerChanged)
     --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_INITIALIZED, OnKeepInitialized)
 end
 
-function CyroTrackerKeeps.InitResources()
-    CyroTrackerKeeps.state.resources = {}
-    for index, value in pairs(CrownTrackerConstants.resources) do
-        CyroTrackerKeeps.state.resources[index] = {}
-        CyroTrackerKeeps.state.resources[index].id = index
-        CyroTrackerKeeps.state.resources[index].keepType = GetKeepType(index)
-        CyroTrackerKeeps.state.resources[index].name = value
-        CyroTrackerKeeps.state.resources[index].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.resources[index].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.resources[index].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+function KeepTracker.InitResources()
+    KeepTracker.state.resources = {}
+    for index, value in pairs(CyroTracker.Constants.resources) do
+        KeepTracker.state.resources[index] = {}
+        KeepTracker.state.resources[index].id = index
+        KeepTracker.state.resources[index].keepType = GetKeepType(index)
+        KeepTracker.state.resources[index].name = value
+        KeepTracker.state.resources[index].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
+        KeepTracker.state.resources[index].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+        KeepTracker.state.resources[index].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
     end
 end
 
 
-function CyroTrackerKeeps.InitTrackedObjects(gametime)
-    CyroTrackerKeeps.state.trackedObjects = {}
+function KeepTracker.InitTrackedObjects(gametime)
+    KeepTracker.state.trackedObjects = {}
     local counter = 1
     -- Keeps
-    for index, value in pairs(CrownTrackerConstants.keeps) do
-        CyroTrackerKeeps.state.trackedObjects[counter] = {}
-        CyroTrackerKeeps.state.trackedObjects[counter].id = index
-        CyroTrackerKeeps.state.trackedObjects[counter].keepType = GetKeepType(index)
-        CyroTrackerKeeps.state.trackedObjects[counter].name = value
-        CyroTrackerKeeps.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        if( CyroTrackerKeeps.state.resources ~= nil ) then
-            CyroTrackerKeeps.state.trackedObjects[counter].resources = {}
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.farm = CyroTrackerKeeps.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_FOOD)]
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.farm.rType = CrownTrackerConstants.resourceType.FARM
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.lumber = CyroTrackerKeeps.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_WOOD)]
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.lumber.rType =CrownTrackerConstants.resourceType.LUMBER
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.mine = CyroTrackerKeeps.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_ORE)]
-            CyroTrackerKeeps.state.trackedObjects[counter].resources.mine.rType = CrownTrackerConstants.resourceType.MINE
+    for index, value in pairs(CyroTracker.Constants.keeps) do
+        KeepTracker.state.trackedObjects[counter] = {}
+        KeepTracker.state.trackedObjects[counter].id = index
+        KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
+        KeepTracker.state.trackedObjects[counter].name = value
+        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+        if( KeepTracker.state.resources ~= nil ) then
+            KeepTracker.state.trackedObjects[counter].resources = {}
+            KeepTracker.state.trackedObjects[counter].resources.farm = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_FOOD)]
+            KeepTracker.state.trackedObjects[counter].resources.lumber = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_WOOD)]
+            KeepTracker.state.trackedObjects[counter].resources.mine = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_ORE)]
         end
         counter = counter + 1
     end
     -- Outposts
-    for index, value in pairs(CrownTrackerConstants.outposts) do
-        CyroTrackerKeeps.state.trackedObjects[counter] = {}
-        CyroTrackerKeeps.state.trackedObjects[counter].id = index
-        CyroTrackerKeeps.state.trackedObjects[counter].keepType = GetKeepType(index)
-        CyroTrackerKeeps.state.trackedObjects[counter].name = value
-        CyroTrackerKeeps.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+    for index, value in pairs(Constants.outposts) do
+        KeepTracker.state.trackedObjects[counter] = {}
+        KeepTracker.state.trackedObjects[counter].id = index
+        KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
+        KeepTracker.state.trackedObjects[counter].name = value
+        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
         counter = counter + 1
     end
     -- Towns
-    for index, value in pairs(CrownTrackerConstants.towns) do
-        CyroTrackerKeeps.state.trackedObjects[counter] = {}
-        CyroTrackerKeeps.state.trackedObjects[counter].id = index
-        CyroTrackerKeeps.state.trackedObjects[counter].keepType = GetKeepType(index)
-        CyroTrackerKeeps.state.trackedObjects[counter].name = value
-        CyroTrackerKeeps.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        CyroTrackerKeeps.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+    for index, value in pairs(Constants.towns) do
+        KeepTracker.state.trackedObjects[counter] = {}
+        KeepTracker.state.trackedObjects[counter].id = index
+        KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
+        KeepTracker.state.trackedObjects[counter].name = value
+        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
         counter = counter + 1
     end
 end
 
-function CyroTrackerKeeps.UpdateTrackedObjects(gameTime)
-	if(CyroTrackerKeeps.state.trackedObjects == nil) then
+function KeepTracker.UpdateTrackedObjects(gameTime)
+	if(KeepTracker.state.trackedObjects == nil) then
         return
     end
 
-    for index, trackedObj in pairs(CyroTrackerKeeps.state.trackedObjects) do
+    for index, trackedObj in pairs(KeepTracker.state.trackedObjects) do
 		
         local itemOfInterest = false
 		local previousOwningAlliance = item.owningAlliance
 		item.owningAlliance = GetKeepAlliance(key, BGQUERY_LOCAL)
-		if item.previousOwningAllianceTimestamp == nil or item.previousOwningAllianceTimestamp + RdKGToolCyro.config.previousOwnerThreshold < gameTime then
-			item.previousOwningAlliance = previousOwningAlliance
-			item.previousOwningAllianceTimestamp = gameTime
-		end
 		local previousAttackState = item.isUnderAttack
 		item.isUnderAttack = GetKeepUnderAttack(key,  BGQUERY_LOCAL)
 		item.underAttackFor = 0
@@ -196,7 +193,7 @@ function CyroTrackerKeeps.UpdateTrackedObjects(gameTime)
 	return itemsOfInterest
 end
 
-function CyroTrackerKeeps.IsInCyrodiil()
+function KeepTracker.IsInCyrodiil()
 	if IsInCyrodiil() == true then
 		return true
 	elseif IsInCyrodiil() == false and IsPlayerInAvAWorld() == true and IsInAvAZone() == true and IsInImperialCity() == false and IsActiveWorldBattleground() == false then
@@ -206,27 +203,15 @@ function CyroTrackerKeeps.IsInCyrodiil()
 	end
 end
 
-function CyroTrackerKeeps.UpdateLoop()
-	if CyroTrackerKeeps.IsInCyrodiil() == true then
-		local itemsOfInterest = {}
-		local gameTime = GetGameTimeMilliseconds()
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.resources, gameTime))
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.keeps, gameTime))
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.outposts, gameTime))
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.villages, gameTime))
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.destructibles, gameTime))
-		itemsOfInterest = RdKGToolCyro.AdjustItemsOfInterest(itemsOfInterest, RdKGToolCyro.UpdateItem(RdKGToolCyro.state.temples, gameTime))
-		--d("Sort: " .. #itemsOfInterest)
-		if #itemsOfInterest > 1 then
-			table.sort(itemsOfInterest, RdKGToolCyro.SortItemsOfInterest)
-		end
-		RdKGToolCyro.UpdateItemsOfInterest(itemsOfInterest)
+function KeepTracker.UpdateLoop()
+	if KeepTracker.IsInCyrodiil() == true then
+		KeepTracker.UpdateTrackedObjects()
 	end
 end
 
 
 
-function CyroTrackerKeeps.OnKeepUnderAttackChanged(eventCode, keepId, battlegroundContext, underAttack)
+function KeepTracker.OnKeepUnderAttackChanged(eventCode, keepId, battlegroundContext, underAttack)
 	local keepAlliance = GetKeepAlliance(keepId, battlegroundContext)
 	local keepName = GetKeepName(keepId)
 	local keepType = GetKeepType(keepId)
@@ -247,7 +232,7 @@ function CyroTrackerKeeps.OnKeepUnderAttackChanged(eventCode, keepId, battlegrou
 
 end
 
-function CyroTrackerKeeps.OnAllianceOwnerChanged(eventCode, keepId, battlegroundContext, owningAlliance, oldAlliance)
+function KeepTracker.OnAllianceOwnerChanged(eventCode, keepId, battlegroundContext, owningAlliance, oldAlliance)
 	local newAlliance = GetAllianceName(owningAlliance)
 	local oldAlliance = GetAllianceName(oldAlliance)
 	local keepName = GetKeepName(keepId)
