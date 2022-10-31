@@ -1,15 +1,23 @@
 CyroTracker = CyroTracker or {}
 
+local Util = CyroTracker.Util
+local libGPS = LibGPS2
+
 CyroTracker.title = "|cFF860DCyrodiiltracker|cD5D502"
 CyroTracker.addonName = "CyrodiilTracker"
 CyroTracker.updateInterval = 500 -- in ms
-CyroTracker.last_worldX = 0
-CyroTracker.last_worldY = 0
+CyroTracker.worldX = "___"
+CyroTracker.worldY = "___"
 CyroTracker.leaderTag = nil
-CyroTracker.keepRow1     = "OFFLINERS_"
-CyroTracker.keepRow2     = "_POSITION_"
-CyroTracker.outpostRow1  = "__SYSTEM__"
-CyroTracker.crownRow1    = "0000000000"
+CyroTracker.keepRow1     = "__________"
+CyroTracker.keepRow2     = "__________"
+CyroTracker.scrollRow1   = "__________"
+CyroTracker.crownRow1    = "__________"
+
+CyroTracker.CrownOutput = "0000"
+CyroTracker.ScrollOutput1 = "00000" -- 2 Scrolls on Crown Row
+
+-- Tracking Crown to 3 digits resolution vs 4 digits
 
 function CyroTracker.Message( message )
 	CHAT_ROUTER:AddSystemMessage(string.format(
@@ -26,10 +34,15 @@ function CyroTracker.OnAddOnLoaded( eventCode, addOnName )
 		
 		CyroTracker.WriteForExport()
 		zo_callLater( function() CyroTracker.Message("Loaded") end, 100 )
-		zo_callLater( function() CyroTracker.EncounterTracker.Initialize() end, 500 )
+		zo_callLater( function() CyroTracker.InitializeChildren() end, 500 )
 
 		EVENT_MANAGER:UnregisterForEvent(CyroTracker.addonName, EVENT_ADD_ON_LOADED)
 	end
+end
+
+function CyroTracker.InitializeChildren()
+	CyroTracker.EncounterTracker.Initialize()
+	CyroTracker.KeepTracker.Initialize()
 end
 
 EVENT_MANAGER:RegisterForEvent(CyroTracker.addonName, EVENT_ADD_ON_LOADED, CyroTracker.OnAddOnLoaded)
@@ -42,7 +55,12 @@ SLASH_COMMANDS["/ct"] = function(text)
 	elseif text == "log" then
 		CyroTracker.EncounterTracker.Toggle()
 	elseif text == "test" then
-		CyroTracker.KeepTracker.Initialize()
+		CyroTracker.KeepTracker.DebugOutput()
+	elseif text == "testall" then
+		CyroTracker.KeepTracker.DebugAll()
+	elseif text == "scroll" then
+		local _, X, Y = GetObjectivePinInfo(119, 137, 1) -- Mnem
+		CyroTracker.Message("X: ".. tostring(X * 100) .. " Y:" .. tostring(Y * 100))
 	else
 		CyroTracker.Message("Available args: Log | Reload")
 	end
@@ -73,37 +91,25 @@ function CyroTracker.OnUpdate()
 	local unitID = CyroTracker.leaderTag
 
 	if CyroTracker.leaderTag == nil then
-		return
+		CyroTracker.CrownOutput = "0000"
+	else
+		local unitX, unitY = Util.GetUnitPosition(CyroTracker.leaderTag)
+		local compressedOutput = Util.BaseConverter(unitX .. unitY)
+		CyroTracker.CrownOutput = Util.LeftPad(compressedOutput, 4, "_");
 	end
-	
-	local _x, _y, heading, isShownInCurrentMap = GetMapPlayerPosition(unitID)
-	local zoneId, worldX, worldZ, worldY = GetUnitWorldPosition(unitID)
-	
-	if (CyroTracker.last_worldX == worldX and CyroTracker.last_worldY == worldY) then return end
-
-	CyroTracker.last_worldX = worldX
-	CyroTracker.last_worldY = worldY
-
-	local result=""
-	if ( worldX ~= nil ) then
-	   result = result..string.format("%04d", zo_round(worldX/100))
-	end
-
-	if ( worldY ~= nil ) then
-	   result = result..string.format("%04d", zo_round(worldY/100))
-	end
-
-	CyroTracker.crownRow1 = string.format("%010d", result)
 	
 	CyroTracker.WriteForExport()
-
 end
 
 function CyroTracker.WriteForExport()
 	local resultText = ""
+	
+	CyroTracker.crownRow1 = Util.ReplaceStr(6, CyroTracker.crownRow1, CyroTracker.CrownOutput)
+	CyroTracker.crownRow1 = Util.ReplaceStr(0, CyroTracker.crownRow1, CyroTracker.ScrollOutput1)
+
 	resultText = resultText..CyroTracker.keepRow1.."\n"
 	resultText = resultText..CyroTracker.keepRow2.."\n"
-	resultText = resultText..CyroTracker.outpostRow1.."\n"
+	resultText = resultText..CyroTracker.scrollRow1.."\n"
 	resultText = resultText..CyroTracker.crownRow1
 	
 	CyrodiilTrackerUI_lblPosition:SetText(resultText)

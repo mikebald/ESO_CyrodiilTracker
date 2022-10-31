@@ -1,3 +1,4 @@
+CyroTracker = CyroTracker or {}
 CyroTracker.EncounterTracker = CyroTracker.EncounterTracker or {}
 
 local EncounterTracker = CyroTracker.EncounterTracker

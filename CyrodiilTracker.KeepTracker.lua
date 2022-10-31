@@ -1,242 +1,162 @@
+CyroTracker = CyroTracker or {}
 CyroTracker.KeepTracker = CyroTracker.KeepTracker or {}
 
 local KeepTracker = CyroTracker.KeepTracker
 local Constants = CyroTracker.Constants
+local Util = CyroTracker.Util
 
 KeepTracker.updateInterval = 1000
+KeepTracker.chunkLength = 14
+KeepTracker.compressChunks = { -- Right to Left
+	[1] = 14,
+	[2] = 13
+}
 KeepTracker.state = {}
 
--- BGQUERY_LOCAL -> battlegroundContext
-
-function KeepTracker.Initialize()
-    EVENT_MANAGER:RegisterForUpdate(CyroTracker.name, KeepTracker.updateInterval, KeepTracker.UpdateLoop)
-
-    KeepTracker.InitResources()
-    KeepTracker.InitTrackedObjects()
-    --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_UNDER_ATTACK_CHANGED, OnKeepUnderAttackChanged)
-    --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_ALLIANCE_OWNER_CHANGED, OnAllianceOwnerChanged)
-    --EVENT_MANAGER:RegisterForEvent(CrownTracker.name, EVENT_KEEP_INITIALIZED, OnKeepInitialized)
+-- test = "999222 1221212 1211112 2221113"
+--                                      ^ Warden
+function KeepTracker.DebugOutput()
+	CyroTracker.Message("[1]: " .. KeepTracker.GetOutput(1, false, 0) )
+	CyroTracker.Message("[2]: " .. KeepTracker.GetOutput(2, false, 0) )
+	CyroTracker.Message("[1]: " .. KeepTracker.GetOutput(1, true, 0) )
+	CyroTracker.Message("[2]: " .. KeepTracker.GetOutput(2, true, 0) )
 end
 
-function KeepTracker.InitResources()
-    KeepTracker.state.resources = {}
-    for index, value in pairs(CyroTracker.Constants.resources) do
-        KeepTracker.state.resources[index] = {}
-        KeepTracker.state.resources[index].id = index
-        KeepTracker.state.resources[index].keepType = GetKeepType(index)
-        KeepTracker.state.resources[index].name = value
-        KeepTracker.state.resources[index].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        KeepTracker.state.resources[index].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        KeepTracker.state.resources[index].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-    end
+function KeepTracker.DebugAll()
+	for index, trackedObj in pairs(KeepTracker.state.trackedScrolls) do
+		CyroTracker.Message("[".. trackedObj.name .."]  X: " .. trackedObj.x .. " Y:" .. trackedObj.y )
+	end
 end
 
+function KeepTracker.GetOutput( chunkNumber, compressed, forcedLength )
+	local output = {} -- table
+	local outputString = ""
+	local chunkStart = (( chunkNumber - 1 ) * KeepTracker.chunkLength) + 1 -- Starts at 1
+	local chunkEnd = (chunkNumber * KeepTracker.chunkLength)
+
+	if forcedLength == nil then forcedLength = 0 end
+
+	for i = chunkStart, chunkEnd do
+		if(KeepTracker.state.trackedObjects[i] ~= nil) then
+			table.insert( output, KeepTracker.state.trackedObjects[i].output )
+		end
+	end
+
+	if compressed == true then
+		outputString = Util.BaseConverter(table.concat(output,""))
+	else
+		outputString = table.concat(output,"")
+	end
+
+	while string.len(outputString) < forcedLength do
+		outputString = "_" .. outputString
+	end
+
+	return outputString
+end
+
+function KeepTracker.GetOutputForTrackedObject( trackedObj )
+	local alliance = trackedObj.owningAlliance
+	local siege = trackedObj.totalSiege
+	
+	if siege ~= 0 then
+		if alliance == ALLIANCE_ALDMERI_DOMINION then
+			if siege < 10 then return 4 else return 5 end
+		end
+		if alliance == ALLIANCE_EBONHEART_PACT then
+			if siege < 10 then return 6 else return 7 end
+		end
+		if alliance == ALLIANCE_DAGGERFALL_COVENANT then
+			if siege < 10 then return 8 else return 9 end
+		end
+	else
+		return alliance
+	end
+
+end
 
 function KeepTracker.InitTrackedObjects(gametime)
     KeepTracker.state.trackedObjects = {}
     local counter = 1
-    -- Keeps
-    for index, value in pairs(CyroTracker.Constants.keeps) do
+    for index, value in pairs(CyroTracker.Constants.tracking) do
         KeepTracker.state.trackedObjects[counter] = {}
         KeepTracker.state.trackedObjects[counter].id = index
         KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
         KeepTracker.state.trackedObjects[counter].name = value
         KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
         KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        if( KeepTracker.state.resources ~= nil ) then
-            KeepTracker.state.trackedObjects[counter].resources = {}
-            KeepTracker.state.trackedObjects[counter].resources.farm = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_FOOD)]
-            KeepTracker.state.trackedObjects[counter].resources.lumber = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_WOOD)]
-            KeepTracker.state.trackedObjects[counter].resources.mine = KeepTracker.state.resources[GetResourceKeepForKeep(i, RESOURCETYPE_ORE)]
-        end
-        counter = counter + 1
-    end
-    -- Outposts
-    for index, value in pairs(Constants.outposts) do
-        KeepTracker.state.trackedObjects[counter] = {}
-        KeepTracker.state.trackedObjects[counter].id = index
-        KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
-        KeepTracker.state.trackedObjects[counter].name = value
-        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        counter = counter + 1
-    end
-    -- Towns
-    for index, value in pairs(Constants.towns) do
-        KeepTracker.state.trackedObjects[counter] = {}
-        KeepTracker.state.trackedObjects[counter].id = index
-        KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
-        KeepTracker.state.trackedObjects[counter].name = value
-        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].previousAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
+		KeepTracker.state.trackedObjects[counter].allianceName = Constants.keepAlliance[GetKeepAlliance(index, BGQUERY_LOCAL)]
+		KeepTracker.state.trackedObjects[counter].siegingAlliance = Util.GetSiegingAlliance(index)
+		KeepTracker.state.trackedObjects[counter].totalSiege = Util.GetAttackingSiege(index)
+		KeepTracker.state.trackedObjects[counter].output = KeepTracker.GetOutputForTrackedObject(KeepTracker.state.trackedObjects[counter])
         counter = counter + 1
     end
 end
 
-function KeepTracker.UpdateTrackedObjects(gameTime)
+function KeepTracker.InitScrolls()
+	KeepTracker.state.trackedScrolls = {}
+	local counter = 1
+
+    for index, value in pairs(CyroTracker.Constants.scrolls) do
+		KeepTracker.state.trackedScrolls[counter] = {}
+        KeepTracker.state.trackedScrolls[counter].keepId = index
+        KeepTracker.state.trackedScrolls[counter].scrollId = value
+		KeepTracker.state.trackedScrolls[counter].name = Constants.scrolls[index]
+		KeepTracker.state.trackedScrolls[counter].x = "0"
+		KeepTracker.state.trackedScrolls[counter].y = "0"
+		counter = counter + 1
+    end
+end
+
+function KeepTracker.UpdateScrolls()
+	if(KeepTracker.state.trackedScrolls == nil) then
+        return
+    end
+
+	for index, trackedScroll in pairs(KeepTracker.state.trackedScrolls) do
+		local _, x, y = GetObjectivePinInfo(trackedScroll.keepId, trackedScroll.scollId, BGQUERY_LOCAL)
+		
+		trackedScroll.x = tostring(x)
+		trackedScroll.y = tostring(y)
+		
+		--trackedScroll.x = string.format("%02d", zo_round(x * 1000))
+		--trackedScroll.y = string.format("%02d", zo_round(y * 1000))
+	end
+end
+
+function KeepTracker.UpdateTrackedObjects()
 	if(KeepTracker.state.trackedObjects == nil) then
         return
     end
 
     for index, trackedObj in pairs(KeepTracker.state.trackedObjects) do
 		
-        local itemOfInterest = false
-		local previousOwningAlliance = item.owningAlliance
-		item.owningAlliance = GetKeepAlliance(key, BGQUERY_LOCAL)
-		local previousAttackState = item.isUnderAttack
-		item.isUnderAttack = GetKeepUnderAttack(key,  BGQUERY_LOCAL)
-		item.underAttackFor = 0
-		item.isCoolingDown = true
-		
-		if item.owningAlliance ~= previousOwningAlliance and RdKGToolCyro.state.destructibles[key] == nil then
-			itemOfInterest = true
-			--d("keep switched")
-			if item.interestingSince == nil then
-				item.interestingSince = gameTime
-			end
-			item.underAttackFor = gameTime - item.interestingSince
-			if item.objectives ~= nil then
-				for i = 1, #item.objectives do
-					item.objectives[i].state = 100
-					item.objectives[i].holdingAlliance = item.owningAlliance
-				end
-			end
-			item.flipsAt = nil
-			local eventData = {}
-			eventData.event = RdKGToolCyro.constants.events.KEEP_OWNER_CHANGED
-			eventData.keepId = key
-			eventData.keepName = zo_strformat("<<1>>", GetKeepName(key))
-			eventData.alliance = item.owningAlliance
-			eventData.previousOwningAlliance = previousOwningAlliance
-			RdKGToolCyro.NotifyMessageConsumers(eventData)
-		end
-		if previousAttackState == false and item.isUnderAttack == true then
-			--throw isUaMessage
-			local eventData = {}
-			eventData.event = RdKGToolCyro.constants.events.STATUS_UA
-			eventData.keepId = key
-			eventData.keepName = zo_strformat("<<1>>", GetKeepName(key))
-			eventData.alliance = item.owningAlliance
-			eventData.previousOwningAlliance = previousOwningAlliance
-			RdKGToolCyro.NotifyMessageConsumers(eventData)
-			if item.attackStatusLostAt ~= 0 and item.attackStatusLostAt + RdKGToolCyro.config.siegeTimeout < gameTime then
-				item.underAttackSince = gameTime
-			end
-		elseif previousAttackState == true and item.isUnderAttack == false then
-			--throw isUaLostMessage
-			local eventData = {}
-			eventData.event = RdKGToolCyro.constants.events.STATUS_UA_LOST
-			eventData.keepId = key
-			eventData.keepName = zo_strformat("<<1>>", GetKeepName(key))
-			eventData.alliance = item.owningAlliance
-			eventData.previousOwningAlliance = previousOwningAlliance
-			RdKGToolCyro.NotifyMessageConsumers(eventData)
-			item.attackStatusLostAt = gameTime
-		end
-		if item.isUnderAttack == true then
-			itemOfInterest = true
-			--d("is under attack")
-			if item.interestingSince == nil then
-				item.interestingSince = gameTime
-			end
-			item.underAttackFor = gameTime - item.interestingSince
-			item.isCoolingDown = false
-		else
-			if item.attackStatusLostAt ~= 0 and item.attackStatusLostAt + RdKGToolCyro.config.siegeTimeout > gameTime then
-				itemOfInterest = true
-				--d("not under attack")
-				if item.interestingSince == nil then
-					item.interestingSince = gameTime
-				end
-				item.underAttackFor = gameTime - item.interestingSince
-			end
-		end
-		if RdKGToolCyro.state.destructibles[key] == nil then
-			item.siegeWeapons.AD = GetNumSieges(key, BGQUERY_LOCAL, ALLIANCE_ALDMERI_DOMINION)
-			item.siegeWeapons.DC = GetNumSieges(key, BGQUERY_LOCAL, ALLIANCE_DAGGERFALL_COVENANT)
-			item.siegeWeapons.EP = GetNumSieges(key, BGQUERY_LOCAL, ALLIANCE_EBONHEART_PACT)
-		
-			if item.siegeWeapons.AD > 0 or item.siegeWeapons.DC > 0 or item.siegeWeapons.EP > 0 then
-				itemOfInterest = true
-				item.isCoolingDown = false
-				--d("siege weapons deployed")
-				if item.interestingSince == nil then
-					item.interestingSince = gameTime
-				end
-				item.underAttackFor = gameTime - item.interestingSince
-				item.lastSiegeWeaponSeen = gameTime
-			elseif item.lastSiegeWeaponSeen ~= nil and item.lastSiegeWeaponSeen + RdKGToolCyro.config.siegeTimeout > gameTime then
-				itemOfInterest = true
-				if item.interestingSince == nil then
-					item.interestingSince = gameTime
-				end
-				item.underAttackFor = gameTime - item.interestingSince
-			else
-				item.lastSiegeWeaponSeen = nil
-			end
-		end
-		
-		if item.keepType == KEEPTYPE_BRIDGE or item.keepType == KEEPTYPE_MILEGATE then
-			item.isPassable = IsKeepPassable(key, BGQUERY_LOCAL)
-			item.directionalAccess = GetKeepDirectionalAccess(key, BGQUERY)
-		end
-		if itemOfInterest == true then
-			--d(key)
-			table.insert(itemsOfInterest, item)
-		else
-			item.interestingSince = nil
-		end
-	end
-	return itemsOfInterest
-end
+		trackedObj.owningAlliance = GetKeepAlliance(trackedObj.id, BGQUERY_LOCAL)
+		trackedObj.isUnderAttack = GetKeepUnderAttack(trackedObj.id,  BGQUERY_LOCAL)
+		trackedObj.allianceName = Constants.keepAlliance[GetKeepAlliance(trackedObj.id, BGQUERY_LOCAL)]
+		trackedObj.siegingAlliance = Util.GetSiegingAlliance(trackedObj.id)
+		trackedObj.output = KeepTracker.GetOutputForTrackedObject(trackedObj)
+		trackedObj.totalSiege = Util.GetAttackingSiege(trackedObj.id)
 
-function KeepTracker.IsInCyrodiil()
-	if IsInCyrodiil() == true then
-		return true
-	elseif IsInCyrodiil() == false and IsPlayerInAvAWorld() == true and IsInAvAZone() == true and IsInImperialCity() == false and IsActiveWorldBattleground() == false then
-		return true
-	else
-		return false
 	end
 end
 
 function KeepTracker.UpdateLoop()
-	if KeepTracker.IsInCyrodiil() == true then
+	if Util.IsInCyrodiil() == true then
+		
 		KeepTracker.UpdateTrackedObjects()
+		KeepTracker.UpdateScrolls()
+		
+		local trackerRow1 = KeepTracker.GetOutput(2, true, 10)
+		local trackerRow2 = KeepTracker.GetOutput(1, true, 10)
+		CyroTracker.keepRow1 = trackerRow1
+		CyroTracker.keepRow2 = trackerRow2
 	end
 end
 
+function KeepTracker.Initialize()
+	KeepTracker.InitTrackedObjects()
+	KeepTracker.InitScrolls()
 
-
-function KeepTracker.OnKeepUnderAttackChanged(eventCode, keepId, battlegroundContext, underAttack)
-	local keepAlliance = GetKeepAlliance(keepId, battlegroundContext)
-	local keepName = GetKeepName(keepId)
-	local keepType = GetKeepType(keepId)
-
-	if keepType ~= KEEPTYPE_KEEP or keepType ~= KEEPTYPE_OUTPOST or keepType ~= KEEPTYPE_TOWN then return end
-
-	d(keepName.." under attack")
-
-	-- local defendSiege = GetNumSieges(keepId, battlegroundContext, keepAlliance)
-	-- local allSiege = GetNumSieges(keepId, battlegroundContext, ALLIANCE_ALDMERI_DOMINION)
-	-- allSiege = allSiege + GetNumSieges(keepId, battlegroundContext, ALLIANCE_DAGGERFALL_COVENANT)
-	-- allSiege = allSiege + GetNumSieges(keepId, battlegroundContext, ALLIANCE_EBONHEART_PACT)
-	-- local adSiege = GetNumSieges(keepId, battlegroundContext, ALLIANCE_ALDMERI_DOMINION)
-	-- local dcSiege = GetNumSieges(keepId, battlegroundContext, ALLIANCE_DAGGERFALL_COVENANT)
-	-- local epSiege = GetNumSieges(keepId, battlegroundContext, ALLIANCE_EBONHEART_PACT)
-	-- local mySiege = GetNumSieges(keepId, battlegroundContext, CA.myAlliance)
-	-- local attackSiege = allSiege - defendSiege
-
-end
-
-function KeepTracker.OnAllianceOwnerChanged(eventCode, keepId, battlegroundContext, owningAlliance, oldAlliance)
-	local newAlliance = GetAllianceName(owningAlliance)
-	local oldAlliance = GetAllianceName(oldAlliance)
-	local keepName = GetKeepName(keepId)
-	local keepType = GetKeepType(keepId)
-
-	if keepType ~= KEEPTYPE_KEEP or keepType ~= KEEPTYPE_OUTPOST or keepType ~= KEEPTYPE_TOWN then return end
+	EVENT_MANAGER:RegisterForUpdate(CyroTracker.name, KeepTracker.updateInterval, KeepTracker.UpdateLoop)
 end

@@ -4,6 +4,8 @@
 ## Version 1.0
 ## Description: Displays coordinates of the crown and their heading for unique location determination
 
+CyrodiilTracker.Util.lua
+
 CyrodiilTracker.lua
 CyrodiilTrackerUI.xml
 

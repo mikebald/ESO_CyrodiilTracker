@@ -1,11 +1,48 @@
+CyroTracker = CyroTracker or {}
 CyroTracker.Constants = CyroTracker.Constants or {}
 
 local Constants = CyroTracker.Constants
+
+Constants.keepAlliance = {
+    [1] = "AD",
+    [2] = "EP",
+    [3] = "DC"
+}
+
+Constants.keepOutput = {
+    [1] = "AD",
+    [2] = "EP",
+    [3] = "DC",
+    [4] = "AD - UA : EP",
+    [5] = "AD - UA : DC",
+    [6] = "EP - UA : AD",
+    [7] = "EP - UA : DC",
+    [8] = "DC - UA : AD",
+    [9] = "DC - UA : EP"
+}
 
 Constants.resourceType = {}
 Constants.resourceType.FARM = 1
 Constants.resourceType.MINE = 2
 Constants.resourceType.LUMBER = 3
+
+Constants.scrolls = {
+	[118] =	 136,		-- Elder Scroll of Altadoon
+	[119] =	 137,		-- Elder Scroll of Mnem
+    [120] =	 138,		-- Elder Scroll of Ghartok
+	[121] =	 139,		-- Elder Scroll of Chim
+	[122] =	 140,		-- Elder Scroll of Ni-Mohk
+    [123] =	 141,		-- Elder Scroll of Alma Ruma
+}
+
+Constants.scrolls = {
+	[118] =	 "Altadoon",
+	[119] =	 "Mnem",
+    [120] =	 "Ghartok",
+	[121] =	 "Chim",
+	[122] =	 "Ni-Mohk",
+    [123] =	 "Alma Ruma",
+}
 
 Constants.resources = {
     [22] = "Bloodmayne Farm",
@@ -64,7 +101,7 @@ Constants.resources = {
     [87] = "Brindle Farm"
 
 }
-Constants.keeps = {
+Constants.tracking = {
     [3] = "Warden",
     [4] = "Rayles",
     [5] = "Glademist",
@@ -83,19 +120,15 @@ Constants.keeps = {
     [18] = "Brindle",
     [19] = "Black Boot",
     [20] = "Bloodmayne",
-}
-Constants.outposts = {
     [132] = "Nikel",
     [133] = "Sejanus",
-    [134] = "Bleaker's",
+    [152] = "Cropsford",
     [163] = "Winter's Peak",
     [164] = "Carmala",
-    [165] = "Harlun's"
-}
-Constants.towns = {
+    [165] = "Harlun's",
+    [134] = "Bleaker's",
     [149] = "Vlastarus",
-    [151] = "Bruma",
-    [152] = "Cropsford"
+    [151] = "Bruma"
 }
 Constants.scrolltemples = {
     [118] = "Scroll Temple of Altadoon",
@@ -105,7 +138,6 @@ Constants.scrolltemples = {
     [122] = "Scroll Temple of Ni-Mohk",
     [123] = "Scroll Temple of Alma Ruma"
 }
-
 Constants.destructibles = {
     [154] = "Alessia Bridge",
     [155] = "Ash Milegate",
