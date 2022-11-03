@@ -95,7 +95,7 @@ function CyroTracker.OnUpdate()
 	else
 		local unitX, unitY = Util.GetUnitPosition(CyroTracker.leaderTag)
 		local compressedOutput = Util.BaseConverter(unitX .. unitY)
-		CyroTracker.CrownOutput = Util.LeftPad(compressedOutput, 4, "_");
+		CyroTracker.CrownOutput = Util.LeftPad(compressedOutput, 4, "0");
 	end
 	
 	CyroTracker.WriteForExport()
