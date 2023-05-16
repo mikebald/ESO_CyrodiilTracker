@@ -13,6 +13,16 @@ KeepTracker.compressChunks = { -- Right to Left
 }
 KeepTracker.state = {}
 
+----------------------------------
+-- 2 Chunks for each outputState
+-- [1] -- 14 Non-compressed
+-- [2] -- 13 Non-compressed
+----------------------------------
+KeepTracker.outputState = {
+	[1] = { [1] = "", [2] = "" },
+	[2] = { [1] = "", [2] = "" }
+}
+
 -- test = "999222 1221212 1211112 2221113"
 --                                      ^ Warden
 function KeepTracker.DebugOutput()
@@ -28,6 +38,22 @@ function KeepTracker.DebugAll()
 	end
 end
 
+function KeepTracker.LoadOutput ()
+	
+	local output = {} -- table
+	local outputString = ""
+	local chunkStart = (( chunkNumber - 1 ) * KeepTracker.chunkLength) + 1 -- Starts at 1
+	local chunkEnd = (chunkNumber * KeepTracker.chunkLength)
+
+	if forcedLength == nil then forcedLength = 0 end
+
+	for i = chunkStart, chunkEnd do
+		if(KeepTracker.state.trackedObjects[i] ~= nil) then
+			table.insert( output, KeepTracker.state.trackedObjects[i].keepStatusOutput )
+		end
+	end
+end
+
 function KeepTracker.GetOutput( chunkNumber, compressed, forcedLength )
 	local output = {} -- table
 	local outputString = ""
@@ -38,7 +64,7 @@ function KeepTracker.GetOutput( chunkNumber, compressed, forcedLength )
 
 	for i = chunkStart, chunkEnd do
 		if(KeepTracker.state.trackedObjects[i] ~= nil) then
-			table.insert( output, KeepTracker.state.trackedObjects[i].output )
+			table.insert( output, KeepTracker.state.trackedObjects[i].keepStatusOutput)
 		end
 	end
 
@@ -55,7 +81,19 @@ function KeepTracker.GetOutput( chunkNumber, compressed, forcedLength )
 	return outputString
 end
 
-function KeepTracker.GetOutputForTrackedObject( trackedObj )
+function KeepTracker.GetResourceStatusOutputForTrackedObject( trackedObj )
+	local alliance = trackedObj.owningAlliance
+	local keepID = trackedObj.id
+	
+	-- Farm [1], Mine [2], Lumber [3]
+	if(trackedObj.keepType == KEEPTYPE_KEEP) then
+		return 1
+	end
+	
+	return 0
+end
+
+function KeepTracker.GetKeepStatusOutputForTrackedObject( trackedObj )
 	local alliance = trackedObj.owningAlliance
 	local siege = trackedObj.totalSiege
 	
@@ -72,8 +110,20 @@ function KeepTracker.GetOutputForTrackedObject( trackedObj )
 	else
 		return alliance
 	end
-
 end
+
+local function GetBGContext()
+    local bgQuery = BGQUERY_UNKNOWN
+    if IsPlayerInAvAWorld() then
+        bgQuery = BGQUERY_LOCAL
+    elseif false then  -- TODO: Is map displaying white keeps
+        bgQuery = BGQUERY_UNKNOWN
+    elseif GetAssignedCampaignId() ~= NONE then
+        bgQuery = BGQUERY_ASSIGNED_CAMPAIGN
+    end
+    return bgQuery
+end
+
 
 function KeepTracker.InitTrackedObjects(gametime)
     KeepTracker.state.trackedObjects = {}
@@ -83,12 +133,25 @@ function KeepTracker.InitTrackedObjects(gametime)
         KeepTracker.state.trackedObjects[counter].id = index
         KeepTracker.state.trackedObjects[counter].keepType = GetKeepType(index)
         KeepTracker.state.trackedObjects[counter].name = value
-        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  BGQUERY_LOCAL)
-        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, BGQUERY_LOCAL)
-		KeepTracker.state.trackedObjects[counter].allianceName = Constants.keepAlliance[GetKeepAlliance(index, BGQUERY_LOCAL)]
+        KeepTracker.state.trackedObjects[counter].isUnderAttack = GetKeepUnderAttack(index,  GetBGContext())
+        KeepTracker.state.trackedObjects[counter].owningAlliance = GetKeepAlliance(index, GetBGContext())
+		KeepTracker.state.trackedObjects[counter].allianceName = Constants.keepAlliance[GetKeepAlliance(index, GetBGContext())]
 		KeepTracker.state.trackedObjects[counter].siegingAlliance = Util.GetSiegingAlliance(index)
 		KeepTracker.state.trackedObjects[counter].totalSiege = Util.GetAttackingSiege(index)
-		KeepTracker.state.trackedObjects[counter].output = KeepTracker.GetOutputForTrackedObject(KeepTracker.state.trackedObjects[counter])
+		KeepTracker.state.trackedObjects[counter].canTravel = GetKeepHasResourcesForTravel(index, GetBGContext())
+		
+		if GetKeepType(index) == KEEPTYPE_KEEP then
+			KeepTracker.state.trackedObjects[counter].farmID = GetResourceKeepForKeep(index, RESOURCETYPE_FOOD)
+			KeepTracker.state.trackedObjects[counter].lumberID = GetResourceKeepForKeep(index, RESOURCETYPE_WOOD)
+			KeepTracker.state.trackedObjects[counter].mineID = GetResourceKeepForKeep(index, RESOURCETYPE_ORE)
+			
+			KeepTracker.state.trackedObjects[counter].farmOwner = GetKeepAlliance(GetResourceKeepForKeep(index, RESOURCETYPE_FOOD), GetBGContext())
+			KeepTracker.state.trackedObjects[counter].lumberOwner = GetKeepAlliance(GetResourceKeepForKeep(index, RESOURCETYPE_WOOD), GetBGContext())
+			KeepTracker.state.trackedObjects[counter].mineOwner = GetKeepAlliance(GetResourceKeepForKeep(index, RESOURCETYPE_ORE), GetBGContext())
+		end
+		
+		KeepTracker.state.trackedObjects[counter].keepStatusOutput = KeepTracker.GetKeepStatusOutputForTrackedObject(KeepTracker.state.trackedObjects[counter])
+		KeepTracker.state.trackedObjects[counter].resourceStatusOutput = KeepTracker.GetResourceStatusOutputForTrackedObject(KeepTracker.state.trackedObjects[counter])
         counter = counter + 1
     end
 end
@@ -114,13 +177,11 @@ function KeepTracker.UpdateScrolls()
     end
 
 	for index, trackedScroll in pairs(KeepTracker.state.trackedScrolls) do
-		local _, x, y = GetObjectivePinInfo(trackedScroll.keepId, trackedScroll.scollId, BGQUERY_LOCAL)
+		local _, x, y = GetObjectivePinInfo(trackedScroll.keepId, trackedScroll.scollId, GetBGContext())
 		
 		trackedScroll.x = tostring(x)
 		trackedScroll.y = tostring(y)
-		
-		--trackedScroll.x = string.format("%02d", zo_round(x * 1000))
-		--trackedScroll.y = string.format("%02d", zo_round(y * 1000))
+
 	end
 end
 
@@ -130,19 +191,24 @@ function KeepTracker.UpdateTrackedObjects()
     end
 
     for index, trackedObj in pairs(KeepTracker.state.trackedObjects) do
-		
-		trackedObj.owningAlliance = GetKeepAlliance(trackedObj.id, BGQUERY_LOCAL)
-		trackedObj.isUnderAttack = GetKeepUnderAttack(trackedObj.id,  BGQUERY_LOCAL)
-		trackedObj.allianceName = Constants.keepAlliance[GetKeepAlliance(trackedObj.id, BGQUERY_LOCAL)]
+		trackedObj.owningAlliance = GetKeepAlliance(trackedObj.id, GetBGContext())
+		trackedObj.isUnderAttack = GetKeepUnderAttack(trackedObj.id,  GetBGContext())
+		trackedObj.allianceName = Constants.keepAlliance[GetKeepAlliance(trackedObj.id, GetBGContext())]
 		trackedObj.siegingAlliance = Util.GetSiegingAlliance(trackedObj.id)
-		trackedObj.output = KeepTracker.GetOutputForTrackedObject(trackedObj)
 		trackedObj.totalSiege = Util.GetAttackingSiege(trackedObj.id)
-
+		trackedObj.canTravel = GetKeepHasResourcesForTravel(trackedObj.id, GetBGContext())
+		trackedObj.keepStatusOutput = KeepTracker.GetKeepStatusOutputForTrackedObject(trackedObj)
+		if GetKeepType(index) == KEEPTYPE_KEEP then
+			trackedObj.farmOwner = GetKeepAlliance(GetResourceKeepForKeep(trackedObj.id, RESOURCETYPE_FOOD), GetBGContext())
+			trackedObj.lumberOwner = GetKeepAlliance(GetResourceKeepForKeep(trackedObj.id, RESOURCETYPE_WOOD), GetBGContext())
+			trackedObj.mineOwner = GetKeepAlliance(GetResourceKeepForKeep(trackedObj.id, RESOURCETYPE_ORE), GetBGContext())
+		end
+		trackedObj.resourceStatusOutput = KeepTracker.GetResourceStatusOutputForTrackedObject(trackedObj)
 	end
 end
 
 function KeepTracker.UpdateLoop()
-	if Util.IsInCyrodiil() == true then
+	--if Util.IsInCyrodiil() == true then
 		
 		KeepTracker.UpdateTrackedObjects()
 		KeepTracker.UpdateScrolls()
@@ -151,7 +217,7 @@ function KeepTracker.UpdateLoop()
 		local trackerRow2 = KeepTracker.GetOutput(1, true, 10)
 		CyroTracker.keepRow1 = trackerRow1
 		CyroTracker.keepRow2 = trackerRow2
-	end
+	--end
 end
 
 function KeepTracker.Initialize()

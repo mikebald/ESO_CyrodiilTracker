@@ -83,7 +83,11 @@ function EncounterTracker.Stop()
 end
 
 function EncounterTracker.Initialize()
-    EncounterTracker.Status()
-    EVENT_MANAGER:RegisterForUpdate(EncounterTracker.name, EncounterTracker.timerInterval, EncounterTracker.OnUpdate)
-    EncounterTracker.IsDate() -- Only need to run once
+    if CyroTracker.EnableEncounterTracker then
+        EncounterTracker.Status()
+        EVENT_MANAGER:RegisterForUpdate(EncounterTracker.name, EncounterTracker.timerInterval, EncounterTracker.OnUpdate)
+        EncounterTracker.IsDate() -- Only need to run once
+    else
+        CyrodiilEncounterTrackerUI:SetHidden(true)
+    end
 end
