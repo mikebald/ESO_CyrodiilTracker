@@ -1,5 +1,5 @@
 ## Title: CyrodiilTracker
-## APIVersion: 100031
+## APIVersion: 100041
 ## SavedVariables: CyrodiilTracker
 ## Version 1.0
 ## Description: Displays coordinates of the crown and their heading for unique location determination
@@ -9,8 +9,12 @@ CyrodiilTracker.Util.lua
 CyrodiilTracker.lua
 CyrodiilTrackerUI.xml
 
+CyrodiilTracker.EncounterTrackerScheduler.lua
+
 CyrodiilTracker.EncounterTracker.lua
 CyrodiilTracker.EncounterTrackerUI.xml
 
 CyrodiilTracker.Constants.lua
 CyrodiilTracker.KeepTracker.lua
+
+FSEX300.slug

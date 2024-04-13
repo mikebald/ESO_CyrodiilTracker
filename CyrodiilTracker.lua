@@ -17,7 +17,7 @@ CyroTracker.crownRow1    = "__________"
 CyroTracker.CrownOutput = "0000"
 CyroTracker.ScrollOutput1 = "00000" -- 2 Scrolls on Crown Row
 
-CyroTracker.EnableEncounterTracker = false
+CyroTracker.EnableEncounterTracker = true
 
 -- Tracking Crown to 3 digits resolution vs 4 digits
 

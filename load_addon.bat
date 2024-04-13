@@ -3,3 +3,4 @@ copy *.lua "%USERPROFILE%\Documents\Elder Scrolls Online\live\AddOns\CyrodiilTra
 copy *.txt "%USERPROFILE%\Documents\Elder Scrolls Online\live\AddOns\CyrodiilTracker\"
 copy *.xml "%USERPROFILE%\Documents\Elder Scrolls Online\live\AddOns\CyrodiilTracker\"
 copy *.ttf "%USERPROFILE%\Documents\Elder Scrolls Online\live\AddOns\CyrodiilTracker\"
+copy *.slug "%USERPROFILE%\Documents\Elder Scrolls Online\live\AddOns\CyrodiilTracker\"

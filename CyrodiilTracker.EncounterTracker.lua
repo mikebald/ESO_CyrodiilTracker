@@ -2,27 +2,39 @@ CyroTracker = CyroTracker or {}
 CyroTracker.EncounterTracker = CyroTracker.EncounterTracker or {}
 
 local EncounterTracker = CyroTracker.EncounterTracker
+local EncounterTrackerScheduler = CyroTracker.EncounterTrackerScheduler
 
 EncounterTracker.name = "CyroTracker_EncounterTracker"
 EncounterTracker.timerInterval = 10000
-EncounterTracker.startTime = "21:00:00"
-EncounterTracker.endTime = "23:00:00"
-EncounterTracker.GamingDays = { 2, 4 } -- Monday & Wednesday
-EncounterTracker.DayOfWeek = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" }
-EncounterTracker.CorrectDate = true
+EncounterTracker.Schedule = {}
+EncounterTracker.Override = false -- Set to enable the tracker
+
+function EncounterTracker.CreateSchedule()
+    -- { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" }
+    -- {        1,        2,         3,           4,          5,        6,         7  }
+    local offliners_Monday =    EncounterTrackerScheduler.ScheduleDay:new(2, "21:00", "23:00")
+    local offliners_Wednesday = EncounterTrackerScheduler.ScheduleDay:new(4, "21:00", "23:00")
+    local ftier_Friday = EncounterTrackerScheduler.ScheduleDay:new(6, "20:45", "23:00")
+    local ftier_Sunday = EncounterTrackerScheduler.ScheduleDay:new(1, "20:45", "23:00")
+
+    --local test = EncounterTrackerScheduler.ScheduleDay:new(7, "19:00", "23:00")
+
+    EncounterTracker.Schedule = EncounterTrackerScheduler.ScheduleObj:new()
+    EncounterTracker.Schedule:addDay(offliners_Monday)
+    EncounterTracker.Schedule:addDay(offliners_Wednesday)
+    EncounterTracker.Schedule:addDay(ftier_Friday)
+    EncounterTracker.Schedule:addDay(ftier_Sunday)
+    --EncounterTracker.Schedule:addDay(test)
+end
+
 
 function EncounterTracker.OnUpdate()
-    EncounterTracker.Status()
-    
-    if EncounterTracker.CorrectDate then
-    
-        if EncounterTracker.IsTime() then
-            EncounterTracker.Start()
-        else
-            EncounterTracker.Stop()
-        end
-    
+    if EncounterTracker.Schedule:isWithinSchedule() or EncounterTracker.Override then
+        EncounterTracker.Start()
+    else
+        EncounterTracker.Stop()
     end
+    EncounterTracker.Status()
 end
 
 function EncounterTracker.Status()
@@ -33,31 +45,6 @@ function EncounterTracker.Status()
         CyrodiilEncounterTrackerUI_lblStatus:SetText("Stopped")
         CyrodiilEncounterTrackerUI_lblStatus:SetColor(1,0,0,1)
     end
-end
-
-function EncounterTracker.ParseTime(timeString)
-    local hour, minute = timeString:match("(%d+):(%d+)")
-    return (hour * 60) + minute;
-end
-
-function EncounterTracker.IsTime()
-    local parsedTime = EncounterTracker.ParseTime(GetTimeString())
-    local start = EncounterTracker.ParseTime(EncounterTracker.startTime)
-    local stop = EncounterTracker.ParseTime(EncounterTracker.endTime)
-    return parsedTime >= start and parsedTime <= stop
-end
-
-function EncounterTracker.IsDate()
-    local current_date = os.date("*t")
-    local current_dayOfWeek = current_date.wday
-    for _, gamingDay in ipairs(EncounterTracker.GamingDays) do
-        if gamingDay == current_dayOfWeek then 
-            EncounterTracker.CorrectDate = true
-            return true 
-        end
-    end
-    EncounterTracker.CorrectDate = false
-    return false
 end
 
 function EncounterTracker.Toggle()
@@ -83,10 +70,11 @@ function EncounterTracker.Stop()
 end
 
 function EncounterTracker.Initialize()
+    EncounterTracker.CreateSchedule()
+
     if CyroTracker.EnableEncounterTracker then
         EncounterTracker.Status()
         EVENT_MANAGER:RegisterForUpdate(EncounterTracker.name, EncounterTracker.timerInterval, EncounterTracker.OnUpdate)
-        EncounterTracker.IsDate() -- Only need to run once
     else
         CyrodiilEncounterTrackerUI:SetHidden(true)
     end

@@ -9,7 +9,7 @@
 					<AnchorFill/>
 					<Edge edgeSize="1"/>
 				</Backdrop>
-				<Label name="$(parent)_lblPosition" font="CyrodiilTracker/FSEX300.ttf|16" color="000000" wrapMode="TRUNCATE"
+				<Label name="$(parent)_lblPosition" font="CyrodiilTracker/FSEX300.slug|16" color="000000" wrapMode="TRUNCATE"
 				verticalAlignment="TOP" horizontalAlignment="LEFT" text="000000000">
 					<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT"/>
 				</Label>
